@@ -50,4 +50,4 @@ As a Data Engineer Your objective is to build an end-to-end automated data proce
    * Subscribers receive the notification.
    * Email indicates whether the pipeline succeeded or failed.
 
- ![Workflow Digram](https://github.com/Jayasenthur/Enhancing-E-Commerce-Agility-With-Advanced-ETL-Pipelin/blob/main/ecommerceETL.png)
+ ![Workflow Diagram](https://github.com/Jayasenthur/Enhancing-E-Commerce-Agility-With-Advanced-ETL-Pipeline/blob/main/ecommerceETL.png)
