@@ -5,6 +5,15 @@ This project automates the processing of __orders__ and __returns__ data stored 
 ## Problem Statement
 As a Data Engineer Your objective is to build an end-to-end automated data processing workflow that handles data uploads from the Order and Returns teams, performs a join operation using Glue & PySpark, stores the joined data in Redshift, and sends notifications about the pipeline's status using SNS. 
 
+## Technologies used :
+AWS Glue
+pyspark
+SNS
+Step Funtion
+S3
+Data Catalog
+Streamlit
+
 ## Project Workflow: End-to-End Data Pipeline
 
 ## Step 1: Data Upload via Streamlit
@@ -375,3 +384,24 @@ This Step Function automates ETL execution robustly, ensuring:
 * It handles temporary file delays with retries,
 * It monitors job success/failure,
 * It notifies stakeholders via SNS.
+
+**Step function Diagram**
+
+ ![Step function Diagram](https://github.com/Jayasenthur/Enhancing-E-Commerce-Agility-With-Advanced-ETL-Pipeline/blob/main/Stepfunc/stepfunctions_graph.png)
+
+
+## 6. StreamlitUI##
+
+Streamlit web app that allows users to:
+* Upload orders and returns CSV files.
+* Store them in AWS S3 buckets.
+* Trigger an AWS Step Function to run an ETL pipeline.
+* After success, it loads the processed, joined data from S3.
+* Displays a preview and gives a download option.
+
+**Tech Stack**
+* Streamlit for web UI
+* AWS S3 for file storage
+* AWS Step Functions to trigger ETL
+* AWS Glue for data processing
+* Pandas to show the data
