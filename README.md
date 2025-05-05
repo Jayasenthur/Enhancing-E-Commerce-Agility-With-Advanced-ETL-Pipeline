@@ -49,5 +49,10 @@ As a Data Engineer Your objective is to build an end-to-end automated data proce
    * An SNS topic sends an email.
    * Subscribers receive the notification.
    * Email indicates whether the pipeline succeeded or failed.
+ 
+## Workflow Diagram
 
  ![Workflow Diagram](https://github.com/Jayasenthur/Enhancing-E-Commerce-Agility-With-Advanced-ETL-Pipeline/blob/main/ecommerceETL.png)
+
+
+ 
