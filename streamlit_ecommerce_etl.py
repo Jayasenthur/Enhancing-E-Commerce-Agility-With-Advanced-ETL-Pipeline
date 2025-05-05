@@ -8,8 +8,8 @@ from io import StringIO, BytesIO
 
 # AWS Configuration
 AWS_CONFIG = {
-    #'aws_access_key_id': "AKIA2VKY4KNOCFGW3BNG",
-    #'aws_secret_access_key': "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",
+    'aws_access_key_id': "ACESSKEYID",
+    'aws_secret_access_key': "SECRETACCESSKEY",
     'region_name': "us-east-1"
 }
 
