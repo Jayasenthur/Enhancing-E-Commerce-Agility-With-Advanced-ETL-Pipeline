@@ -446,12 +446,16 @@ Streamlit web app that allows users to:
 * AWS Glue for data processing
 * Pandas to show the data
 
+## StreamlitUI Output
+
+![Streamlit](https://github.com/Jayasenthur/Enhancing-E-Commerce-Agility-With-Advanced-ETL-Pipeline/blob/main/output/streamlitoutput.png)
+
 ## Project Challenges
-**1. Glue Job Output Not Appearing in S3**
-## Challenge ##:
+## 1. Glue Job Output Not Appearing in S3
+### Challenge :
 Joined data not visible in s3://ecommerce-processed/joined-data/ despite job success.
 
-## Solution ##:
+### Solution :
 * __Verify the output path__ in your PySpark script:
 ```python
 output_path = "s3://ecommerce-processed/joined-data/"  # Must match bucket
@@ -469,10 +473,10 @@ Attach this policy:
   }]
 }
 ```
-**2. Event Trigger Not Invoking Lambda**
-## Challenge:
+## 2. Event Trigger Not Invoking Lambda
+### Challenge:
 Uploads to `ecommerce-orders-raw` don’t trigger the Lambda.
-## Solution:
+### Solution:
 * __Verify the S3 notification__:
 ```bash
 aws s3api get-bucket-notification-configuration \
