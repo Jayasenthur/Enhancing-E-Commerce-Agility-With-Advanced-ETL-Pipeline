@@ -302,16 +302,16 @@ It’s used as a pre-check before triggering the Glue ETL process.
 }
 ```
 
-## 4. Glue ETL Job ##
+## 4. Glue ETL Job 
 **1.Create Glue Job**
-Name: `ecommerce-join-data`
-Type: Spark
-IAM Role: `AWSGlueServiceRole`
-Permissions attached for IAM role
-* AmazonS3FullAccess
-* AWSGlueConsoleFullAccess
-* AWSGlueServiceRole
-* Inline policy attached : Glue,S3
+- Name: `ecommerce-join-data`
+- Type: Spark
+- IAM Role: `AWSGlueServiceRole`
+- Permissions attached for IAM role
+  * AmazonS3FullAccess
+  * AWSGlueConsoleFullAccess
+  * AWSGlueServiceRole
+  * Inline policy attached : Glue,S3
 ```json
  "Effect": "Allow",
             "Action": [
@@ -354,29 +354,29 @@ This AWS Glue PySpark script performs an ETL job to join orders and returns data
 
 ## 5. Orchestration - Step Function
 This AWS Step Functions state machine coordinates an automated ETL pipeline with file existence checks, retries, and notifications. Here's a simplified explanation of what it does:
-1. Initialize Retry Counter
-  * Starts the flow by initializing a retry counter to zero.
-2. Check for Files
-  * Invokes the Lambda function `check-orders-returns-exist` to verify if both the orders and returns files exist in S3.
-3. Decision - FilesExist?
-  * If both files exist → move to trigger the Glue job.
-  * If not and retry count < 5 → wait 30 seconds, increment retry, and recheck.
-  * If retry count ≥ 5 → fail the execution.
-4. Trigger Glue Job
-  * If files are found, it calls another Lambda function ecommerce-trigger-glue to start the AWS Glue job.
-5. Check Glue Job Status
-  * After triggering, it periodically checks the status of the Glue job using the `check-glue-job-status` Lambda function.
-6. Glue Job Status Check
-  * If Glue job succeeds → send success notification to SNS.
-  * If fails → send failure notification.
-  * If still in progress → wait 60 seconds and recheck.
-7. Error Handling
-  * Any failure in Lambda or Glue job triggers the HandleLambdaError state, which ultimately leads to a failure notification.
-8. Notifications
-  * SuccessNotification: Publishes a success message to the `etl-success-topic` SNS topic.
-  * FailExecution: Publishes a failure message (with details like which file failed, Glue status, timestamp) to the `etl-failure-topic`.
-9. Retry Logic Summary
-  * Retries the file check up to 5 times, waiting 30 seconds between attempts, to handle delays in S3 uploads.
+1. ## Initialize Retry Counter
+     * Starts the flow by initializing a retry counter to zero.
+2. ## Check for Files
+     * Invokes the Lambda function `check-orders-returns-exist` to verify if both the orders and returns files exist in S3.
+3. ## Decision - FilesExist?
+     * If both files exist → move to trigger the Glue job.
+     * If not and retry count < 5 → wait 30 seconds, increment retry, and recheck.
+     * If retry count ≥ 5 → fail the execution.
+4. ## Trigger Glue Job
+     * If files are found, it calls another Lambda function ecommerce-trigger-glue to start the AWS Glue job.
+5. ## Check Glue Job Status
+     * After triggering, it periodically checks the status of the Glue job using the `check-glue-job-status` Lambda function.
+6. ## Glue Job Status Check
+     * If Glue job succeeds → send success notification to SNS.
+     * If fails → send failure notification.
+     * If still in progress → wait 60 seconds and recheck.
+7. ## Error Handling
+     * Any failure in Lambda or Glue job triggers the HandleLambdaError state, which ultimately leads to a failure notification.
+8. ## Notifications
+     * SuccessNotification: Publishes a success message to the `etl-success-topic` SNS topic.
+     * FailExecution: Publishes a failure message (with details like which file failed, Glue status, timestamp) to the `etl-failure-topic`.
+9. ## Retry Logic Summary
+     * Retries the file check up to 5 times, waiting 30 seconds between attempts, to handle delays in S3 uploads.
 
 This Step Function automates ETL execution robustly, ensuring:
 
@@ -385,12 +385,12 @@ This Step Function automates ETL execution robustly, ensuring:
 * It monitors job success/failure,
 * It notifies stakeholders via SNS.
 
-**Step function Diagram**
+## Step function Diagram
 
  ![Step function Diagram](https://github.com/Jayasenthur/Enhancing-E-Commerce-Agility-With-Advanced-ETL-Pipeline/blob/main/Stepfunc/stepfunctions_graph.png)
 
 
-## 6. StreamlitUI##
+## 6. StreamlitUI
 
 Streamlit web app that allows users to:
 * Upload orders and returns CSV files.
@@ -405,3 +405,37 @@ Streamlit web app that allows users to:
 * AWS Step Functions to trigger ETL
 * AWS Glue for data processing
 * Pandas to show the data
+
+## Project Challenges
+**1. Glue Job Output Not Appearing in S3**
+## Challenge ##:
+Joined data not visible in s3://ecommerce-processed/joined-data/ despite job success.
+
+## Solution ##:
+* __Verify the output path__ in your PySpark script:
+```python
+output_path = "s3://ecommerce-processed/joined-data/"  # Must match bucket
+```
+* __Check IAM permissions__:
+Glue job role needs `s3:PutObject` on the target bucket.
+Attach this policy:
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["s3:PutObject"],
+    "Resource": "arn:aws:s3:::ecommerce-processed/*"
+  }]
+}
+```
+**2. Event Trigger Not Invoking Lambda**
+## Challenge:
+Uploads to `ecommerce-orders-raw` don’t trigger the Lambda.
+## Solution:
+* __Verify the S3 notification__:
+```bash
+aws s3api get-bucket-notification-configuration \
+  --bucket ecommerce-orders-raw
+```
+* __Recreate the trigger if missing__
