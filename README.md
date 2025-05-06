@@ -62,7 +62,7 @@ As a Data Engineer Your objective is to build an end-to-end automated data proce
 
 ## Workflow Diagram
 
- ![Workflow Diagram](https://github.com/Jayasenthur/Enhancing-E-Commerce-Agility-With-Advanced-ETL-Pipeline/blob/main/ecommerceETL.png)
+ ![Workflow Diagram](https://github.com/Jayasenthur/Enhancing-E-Commerce-Agility-With-Advanced-ETL-Pipeline/blob/main/workflow/ecommerceETL.png)
 
 ## Setup and Core Components
 ## 1. AWS Account Setup
