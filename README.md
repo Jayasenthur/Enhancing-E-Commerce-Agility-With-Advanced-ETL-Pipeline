@@ -6,13 +6,13 @@ This project automates the processing of __orders__ and __returns__ data stored 
 As a Data Engineer Your objective is to build an end-to-end automated data processing workflow that handles data uploads from the Order and Returns teams, performs a join operation using Glue & PySpark, stores the joined data in Redshift, and sends notifications about the pipeline's status using SNS. 
 
 ## Technologies used :
-AWS Glue
-pyspark
-SNS
-Step Funtion
-S3
-Data Catalog
-Streamlit
+-AWS Glue
+-pyspark
+-SNS
+-Step Funtion
+-S3
+-Data Catalog
+-Streamlit
 
 ## Project Workflow: End-to-End Data Pipeline
 
@@ -303,7 +303,7 @@ It’s used as a pre-check before triggering the Glue ETL process.
 ```
 
 ## 4. Glue ETL Job 
-**1.Create Glue Job**
+### 1.Create Glue Job
 - Name: `ecommerce-join-data`
 - Type: Spark
 - IAM Role: `AWSGlueServiceRole`
@@ -342,7 +342,7 @@ It’s used as a pre-check before triggering the Glue ETL process.
         },
 ```
 
-**2.Glue PySpark Script**
+### 2.Glue PySpark Script
 This AWS Glue PySpark script performs an ETL job to join orders and returns data from S3 and save the result in Parquet format:
 1. Reads input arguments (S3 buckets, keys, output database/table).
 2. Loads CSV files from `ecommerce-orders-raw` and `ecommerce-returns-raw`
@@ -450,6 +450,17 @@ Streamlit web app that allows users to:
 
 ![Streamlit](https://github.com/Jayasenthur/Enhancing-E-Commerce-Agility-With-Advanced-ETL-Pipeline/blob/main/output/streamlitoutput.png)
 
+
+## Why Use CloudWatch?
+
+CloudWatch is AWS’s built-in monitoring service that helps you:
+
+- Detect failures in real-time (Glue jobs, Lambda, Step Functions).
+- Debug errors with detailed logs.
+- Set up alerts (e.g., email/SMS when something breaks).
+- Track performance (e.g., slow Glue jobs or Lambda timeouts).
+- Execution history (which step failed).
+
 ## Project Challenges
 ## 1. Glue Job Output Not Appearing in S3
 ### Challenge :
@@ -483,3 +494,5 @@ aws s3api get-bucket-notification-configuration \
   --bucket ecommerce-orders-raw
 ```
 * __Recreate the trigger if missing__
+
+
