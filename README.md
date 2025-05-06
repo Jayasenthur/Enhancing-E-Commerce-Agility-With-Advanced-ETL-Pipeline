@@ -352,7 +352,7 @@ This AWS Glue PySpark script performs an ETL job to join orders and returns data
 6. Adds a processing timestamp and writes the final data to `s3://ecommerce-processed/joined-data/` in Parquet format.
 7. Commits the Glue job and logs success or failure.
 
-## Data storage - AWS Glue Data catalog and Athena instead of Redshift
+## Data storage - Why Athena Replaced Redshift
 In our initial ETL pipeline, we used Amazon Redshift for data warehousing. However, after evaluating performance, cost, and scalability, we decided to migrate to AWS Glue Data Catalog and Amazon Athena for the following reasons:
 
 ## Benefits of AWS Glue Data Catalog & Athena Over Redshift
