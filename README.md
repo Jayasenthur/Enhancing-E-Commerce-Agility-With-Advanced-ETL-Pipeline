@@ -191,10 +191,10 @@ As a Data Engineer Your objective is to build an end-to-end automated data proce
     ]
 }
 ```
-### Key features
+### Purpose
 This AWS Lambda function is triggered when both Order and Returns files are uploaded to S3. It:
 * Extracts S3 bucket and object key details from the event.
-* Starts an AWS Glue job named "ecommerce_join_data" with the file locations and additional parameters like output database and table.
+* Starts an AWS Glue job named `ecommerce_join_data` with the file locations and additional parameters like output database and table.
 * Returns the Glue job run ID if successful, or an error message if something goes wrong.
 
 ## 2. Create Lambda Function
@@ -249,13 +249,13 @@ This AWS Lambda function is triggered when both Order and Returns files are uplo
 }
 ```
 
-**Key features**
+### Purpose###
 This AWS Lambda function checks whether the latest Order and Returns CSV files exist in their respective S3 buckets:
-* It searches each bucket (ecommerce-orders-raw and ecommerce-returns-raw) for the most recent file.
+* Check whether the latest orders and returns files exist in two different S3 buckets (ecommerce-orders-raw and ecommerce-returns-raw).
 * If both files exist, it returns their S3 bucket names and file keys.
 * If either file is missing or inaccessible, it returns "both_exist": False.
 
-It’s used as a pre-check before triggering the Glue ETL process.
+It’s used as a pre-check step in a data pipeline to ensure that the required data files are present in S3  before triggering the Glue ETL process.
 
 ## 3. Create Lambda Function
   * Name: `check-glue-job-status`
@@ -302,7 +302,13 @@ It’s used as a pre-check before triggering the Glue ETL process.
 	]
 }
 ```
-
+### Purpose ### 
+This Lamda function accepts
+  - Accepts a `JobRunId` from the event input.
+  - Checks the status of a Glue job run
+  - Sends an SNS notification if the job is succeeded of failed
+  - Returns the current job status.
+    
 ## 4. Glue ETL Job 
 ### 1.Create Glue Job
 - Name: `ecommerce-join-data`
