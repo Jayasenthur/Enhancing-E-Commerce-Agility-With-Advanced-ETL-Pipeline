@@ -28,7 +28,7 @@ As a Data Engineer Your objective is to build an end-to-end automated data proce
 * Each file upload triggers an AWS Lambda function.
 * Lambda:
    * Identifies which file was uploaded
-   * Starts an AWS Glue ETL job both the order and return files are uploaded.
+   * Starts an AWS Glue ETL job.
 
 ## Step 3: Data Processing with AWS Glue
 * Glue ETL job performs:
