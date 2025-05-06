@@ -38,7 +38,7 @@ Streamlit
 
 ## Step 4: Data Storage and Access
 * The joined data is written to Data catalog instead of Redshift
-* Teams can query the joined data
+* Teams can query the joined data with Athena
 
 ## Step 5: Orchestration with AWS Step Functions
 * AWS Step Functions manages the full process:
@@ -138,7 +138,7 @@ Streamlit
 *  Create the S3 event trigger `trigger-lambda-on-returns-upload` which automatically invokes your Lambda function `ecommerce-trigger-glue` whenever a new file is uploaded to the `ecommerce-returns-raw` bucket, which then starts your Glue ETL job to process the data.
 
 ## 3. Lambda Function Setup
-**1. Create Lambda Function**
+## 1. Create Lambda Function
   * Name: `ecommerce-trigger-glue`
   * Runtime: Python 3.9
   * Permissions: Glue start-job-run, SNS, CloudWatch logs
@@ -196,7 +196,7 @@ This AWS Lambda function is triggered when both Order and Returns files are uplo
 * Starts an AWS Glue job named "ecommerce_join_data" with the file locations and additional parameters like output database and table.
 * Returns the Glue job run ID if successful, or an error message if something goes wrong.
 
-**2. Create Lambda Function**
+## 2. Create Lambda Function
   * Name: `check-orders-returns-exist`
   * Runtime: Python 3.9
   * Permissions: S3, CloudWatch logs
@@ -256,7 +256,7 @@ This AWS Lambda function checks whether the latest Order and Returns CSV files e
 
 It’s used as a pre-check before triggering the Glue ETL process.
 
-**3. Create Lambda Function**
+## 3. Create Lambda Function
   * Name: `check-glue-job-status`
   * Runtime: Python 3.9
   * Permissions: S3, Glue, CloudWatch logs, SNS, Lamda
@@ -308,9 +308,9 @@ It’s used as a pre-check before triggering the Glue ETL process.
 - Type: Spark
 - IAM Role: `AWSGlueServiceRole`
 - Permissions attached for IAM role
-  * AmazonS3FullAccess
-  * AWSGlueConsoleFullAccess
-  * AWSGlueServiceRole
+  * `AmazonS3FullAccess`
+  * `AWSGlueConsoleFullAccess`
+  * `AWSGlueServiceRole`
   * Inline policy attached : Glue,S3
 ```json
  "Effect": "Allow",
@@ -352,7 +352,47 @@ This AWS Glue PySpark script performs an ETL job to join orders and returns data
 6. Adds a processing timestamp and writes the final data to `s3://ecommerce-processed/joined-data/` in Parquet format.
 7. Commits the Glue job and logs success or failure.
 
-## 5. Orchestration - Step Function
+## Data storage - AWS Glue Data catalog and Athena instead of Redshift
+In our initial ETL pipeline, we used Amazon Redshift for data warehousing. However, after evaluating performance, cost, and scalability, we decided to migrate to AWS Glue Data Catalog and Amazon Athena for the following reasons:
+
+## Benefits of AWS Glue Data Catalog & Athena Over Redshift
+
+| **Factor**          | **Redshift** | **Athena + Glue Data Catalog** |
+|---------------------|-------------|--------------------------------|
+| **Cost**           | Expensive (provisioned clusters) | Pay-per-query (serverless) |
+| **Scalability**    | Manual scaling required | Automatically scales with data volume |
+| **Maintenance**    | Requires tuning, vacuuming, and administration | Fully managed (no maintenance) |
+| **Query Performance** | Optimized for complex OLAP queries | Best for ad-hoc SQL queries on S3 |
+| **Data Format Support** | Limited (requires loading) | Supports Parquet, JSON, CSV, ORC directly in S3 |
+| **ETL Integration** | Needs separate ETL jobs | Seamless with AWS Glue |
+
+### Use Case Fit
+- Our e-commerce data is stored in S3 (raw and transformed).
+- Most queries are ad-hoc analytics, not heavy joins or aggregations.
+- We wanted a serverless solution to reduce operational overhead.
+
+## 1. Setting Up AWS Glue Data Catalog from S3
+### Prerequisites
+- An S3 bucket with structured data (e.g., Parquet, JSON, CSV).
+- IAM permissions for AWS Glue and Athena.
+
+## 2. Steps to Create a Data Catalog
+### Using AWS Glue Crawler (Automated Schema Detection)
+1. Go to AWS Glue Console → Crawlers → Add Crawler.
+2. Configure Crawler:
+   - Name: `ecommerce-data-crawler`
+   - Data Source: S3 path (`s3://your-bucket/transformed-data/`)
+   - IAM Role: `AWSGlueServiceRole`
+3. Configure Output:
+   - Database: ecommerce_db (create if it doesn’t exist)
+
+## 3. Querying Data with Amazon Athena
+Athena allows SQL queries directly on S3 data using the Glue Data Catalog.
+```sql
+SELECT * FROM "default"."joined_data" LIMIT 10;
+```
+
+## 6. Orchestration - Step Function
 This AWS Step Functions state machine coordinates an automated ETL pipeline with file existence checks, retries, and notifications. Here's a simplified explanation of what it does:
 1. ## Initialize Retry Counter
      * Starts the flow by initializing a retry counter to zero.
