@@ -1,0 +1,166 @@
+{
+  "Comment": "Dynamic file checking and triggering Glue job with retry limit",
+  "StartAt": "InitializeRetryCounter",
+  "States": {
+    "InitializeRetryCounter": {
+      "Type": "Pass",
+      "Result": {
+        "retry_count": 0
+      },
+      "ResultPath": "$.retry",
+      "Next": "CheckForFiles"
+    },
+    "CheckForFiles": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:733015200604:function:check-orders-returns-exist",
+      "ResultPath": "$.file_check_result",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "HandleLambdaError"
+        }
+      ],
+      "Next": "FilesExist?"
+    },
+    "FilesExist?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.file_check_result.both_exist",
+          "BooleanEquals": true,
+          "Next": "TriggerGlueJob"
+        },
+        {
+          "Variable": "$.retry.retry_count",
+          "NumericGreaterThanEquals": 5,
+          "Next": "FailExecution"
+        }
+      ],
+      "Default": "Wait30Seconds"
+    },
+    "Wait30Seconds": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "IncrementRetryCounter"
+    },
+    "IncrementRetryCounter": {
+      "Type": "Pass",
+      "Parameters": {
+        "retry_count.$": "States.MathAdd($.retry.retry_count, 1)"
+      },
+      "ResultPath": "$.retry",
+      "Next": "CheckForFiles"
+    },
+    "TriggerGlueJob": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:733015200604:function:ecommerce-trigger-glue",
+      "Parameters": {
+        "bucket_orders.$": "$.file_check_result.bucket_orders",
+        "bucket_returns.$": "$.file_check_result.bucket_returns",
+        "key_orders.$": "$.file_check_result.key_orders",
+        "key_returns.$": "$.file_check_result.key_returns",
+        "output_database": "default",
+        "output_table": "joined_data"
+      },
+      "ResultPath": "$.glue_job_result",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "HandleLambdaError"
+        }
+      ],
+      "Next": "CheckGlueJobStatus"
+    },
+    "CheckGlueJobStatus": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:733015200604:function:check-glue-job-status",
+      "Parameters": {
+        "JobRunId.$": "$.glue_job_result.JobRunId"
+      },
+      "ResultPath": "$.glue_job_status",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "HandleLambdaError"
+        }
+      ],
+      "Next": "GlueJobStatusCheck"
+    },
+    "GlueJobStatusCheck": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.glue_job_status.status",
+          "StringEquals": "SUCCEEDED",
+          "Next": "SuccessNotification"
+        },
+        {
+          "Variable": "$.glue_job_status.status",
+          "StringEquals": "FAILED",
+          "Next": "FailExecution"
+        }
+      ],
+      "Default": "Wait1Min"
+    },
+    "Wait1Min": {
+      "Type": "Wait",
+      "Seconds": 60,
+      "Next": "CheckGlueJobStatus"
+    },
+    "HandleLambdaError": {
+      "Type": "Pass",
+      "Result": {
+        "message": "Lambda execution failed",
+        "details.$": "$.error"
+      },
+      "ResultPath": "$.error_info",
+      "Next": "FailExecution"
+    },
+    "SuccessNotification": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "arn:aws:sns:us-east-1:733015200604:etl-success-topic",
+        "Message": {
+          "input.$": "$",
+          "message": "ETL pipeline completed successfully"
+        }
+      },
+      "End": true
+    },
+    "FailExecution": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": {
+        "TopicArn": "arn:aws:sns:us-east-1:733015200604:etl-failure-topic",
+        "Message": {
+          "input.$": "$",
+          "error_details.$": "$.error",
+          "glue_status.$": "$.glue_job_status.status",
+          "failed_files": {
+            "orders.$": "$.key_orders",
+            "returns.$": "$.key_returns"
+          },
+          "message": "ETL pipeline failed",
+          "timestamp.$": "$$.State.EnteredTime"
+        },
+        "MessageAttributes": {
+          "Severity": {
+            "DataType": "String",
+            "StringValue": "High"
+          }
+        }
+      },
+      "End": true
+    }
+  }
+}
