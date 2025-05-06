@@ -6,13 +6,14 @@ This project automates the processing of __orders__ and __returns__ data stored 
 As a Data Engineer Your objective is to build an end-to-end automated data processing workflow that handles data uploads from the Order and Returns teams, performs a join operation using Glue & PySpark, stores the joined data in Redshift, and sends notifications about the pipeline's status using SNS. 
 
 ## Technologies used :
--AWS Glue
--pyspark
--SNS
--Step Funtion
--S3
--Data Catalog
--Streamlit
+
+- AWS Glue
+- pyspark
+- SNS
+- Step Funtion
+- S3
+- Data Catalog and Athena
+- Streamlit
 
 ## Project Workflow: End-to-End Data Pipeline
 
