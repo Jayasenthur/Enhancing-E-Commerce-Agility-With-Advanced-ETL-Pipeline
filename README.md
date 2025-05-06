@@ -249,7 +249,7 @@ This AWS Lambda function is triggered when both Order and Returns files are uplo
 }
 ```
 
-### Purpose###
+### Purpose
 This AWS Lambda function checks whether the latest Order and Returns CSV files exist in their respective S3 buckets:
 * Check whether the latest orders and returns files exist in two different S3 buckets (ecommerce-orders-raw and ecommerce-returns-raw).
 * If both files exist, it returns their S3 bucket names and file keys.
@@ -306,7 +306,7 @@ It’s used as a pre-check step in a data pipeline to ensure that the required d
 This Lamda function accepts
   - Accepts a `JobRunId` from the event input.
   - Checks the status of a Glue job run
-  - Sends an SNS notification if the job is succeeded of failed
+  - Sends an SNS notification if the job is succeeded or failed
   - Returns the current job status.
     
 ## 4. Glue ETL Job 
@@ -359,7 +359,7 @@ This AWS Glue PySpark script performs an ETL job to join orders and returns data
 6. Adds a processing timestamp and writes the final data to `s3://ecommerce-processed/joined-data/` in Parquet format.
 7. Commits the Glue job and logs success or failure.
 
-## Data storage - Why Athena Replaced Redshift
+## 5. Data storage - Why Athena Replaced Redshift
 In our initial ETL pipeline, we used Amazon Redshift for data warehousing. However, after evaluating performance, cost, and scalability, we decided to migrate to AWS Glue Data Catalog and Amazon Athena for the following reasons:
 
 ## Benefits of AWS Glue Data Catalog & Athena Over Redshift
@@ -378,22 +378,22 @@ In our initial ETL pipeline, we used Amazon Redshift for data warehousing. Howev
 - Most queries are ad-hoc analytics, not heavy joins or aggregations.
 - We wanted a serverless solution to reduce operational overhead.
 
-## 1. Setting Up AWS Glue Data Catalog from S3
+### 1. Setting Up AWS Glue Data Catalog from S3
 ### Prerequisites
 - An S3 bucket with structured data (e.g., Parquet, JSON, CSV).
 - IAM permissions for AWS Glue and Athena.
 
-## 2. Steps to Create a Data Catalog
+### 2. Steps to Create a Data Catalog
 ### Using AWS Glue Crawler (Automated Schema Detection)
 1. Go to AWS Glue Console → Crawlers → Add Crawler.
 2. Configure Crawler:
    - Name: `ecommerce-data-crawler`
-   - Data Source: S3 path (`s3://your-bucket/transformed-data/`)
+   - Data Source: S3 path (`s3://ecommerce-processed/joined-data/`)
    - IAM Role: `AWSGlueServiceRole`
 3. Configure Output:
    - Database: ecommerce_db (create if it doesn’t exist)
 
-## 3. Querying Data with Amazon Athena
+### Querying Data with Amazon Athena
 Athena allows SQL queries directly on S3 data using the Glue Data Catalog.
 ```sql
 SELECT * FROM "default"."joined_data" LIMIT 10;
@@ -410,7 +410,7 @@ This AWS Step Functions state machine coordinates an automated ETL pipeline with
      * If not and retry count < 5 → wait 30 seconds, increment retry, and recheck.
      * If retry count ≥ 5 → fail the execution.
 4. ## Trigger Glue Job
-     * If files are found, it calls another Lambda function ecommerce-trigger-glue to start the AWS Glue job.
+     * If files are found, it calls another Lambda function `ecommerce-trigger-glue` to start the AWS Glue job.
 5. ## Check Glue Job Status
      * After triggering, it periodically checks the status of the Glue job using the `check-glue-job-status` Lambda function.
 6. ## Glue Job Status Check
@@ -469,9 +469,22 @@ CloudWatch is AWS’s built-in monitoring service that helps you:
 - Execution history (which step failed).
 
 ## Project Challenges
-## 1. Glue Job Output Not Appearing in S3
+## 1. Cost Overruns
 ### Challenge :
-Joined data not visible in s3://ecommerce-processed/joined-data/ despite job success.
+- Redshift was expensive for ad-hoc queries.
+### Solution:
+- Migrated to Athena + Glue Data Catalog (saved ~70% costs).
+- Converted data to Parquet (reduced query costs by 80%).
+
+## 2. Glue Job Failures
+### Challenge:
+- PySpark scripts failing due to schema mismatches (e.g., missing columns in raw CSVs).
+### Solution:
+- Added data validation in Glue (e.g., df.printSchema() + mandatory column checks).
+
+## 3. Glue Job Output Not Appearing in S3
+### Challenge :
+Joined data not visible in `s3://ecommerce-processed/joined-data/` despite job success.
 
 ### Solution :
 * __Verify the output path__ in your PySpark script:
@@ -479,27 +492,13 @@ Joined data not visible in s3://ecommerce-processed/joined-data/ despite job suc
 output_path = "s3://ecommerce-processed/joined-data/"  # Must match bucket
 ```
 * __Check IAM permissions__:
-Glue job role needs `s3:PutObject` on the target bucket.
-Attach this policy:
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Action": ["s3:PutObject"],
-    "Resource": "arn:aws:s3:::ecommerce-processed/*"
-  }]
-}
-```
-## 2. Event Trigger Not Invoking Lambda
-### Challenge:
-Uploads to `ecommerce-orders-raw` don’t trigger the Lambda.
-### Solution:
-* __Verify the S3 notification__:
-```bash
-aws s3api get-bucket-notification-configuration \
-  --bucket ecommerce-orders-raw
-```
-* __Recreate the trigger if missing__
+- Fixed IAM permissions for Glue to write to S3.
 
+## 4. Lambda Trigger Issues
+
+### Challenge :
+- Lambda not triggering reliably when files landed in S3.
+
+### Solution :
+- Used S3 Event Notifications + added a `check-orders-returns-exist` Lambda to verify file pairs.
 
