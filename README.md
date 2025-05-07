@@ -132,7 +132,6 @@ As a Data Engineer Your objective is to build an end-to-end automated data proce
 * `ecommerce-orders-raw` - for order team uploads
 * `ecommerce-returns-raw` - for returns team uploads
 * `ecommerce-processed/joined-data` - for joined data
-* `ecommerce-glue-scripts` - for PySpark scripts
 
 ### Configure S3 Triggers
 * Create the S3 event trigger `trigger-lambda-on-orders-upload` which automatically invokes your Lambda function `ecommerce-trigger-glue` whenever a new file is uploaded to the `ecommerce-orders-raw` bucket, which then starts your Glue ETL job to process the data.
