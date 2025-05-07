@@ -443,7 +443,7 @@ Streamlit web app that allows users to:
 * Store them in AWS S3 buckets.
 * Trigger an AWS Step Function to run an ETL pipeline.
 * After success, it loads the processed, joined data from S3.
-* Displays a preview and gives a download option.
+* Displays a preview of joined data and gives a download option.
 
 **Tech Stack**
 * Streamlit for web UI
