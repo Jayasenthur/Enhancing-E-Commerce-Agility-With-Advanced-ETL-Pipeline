@@ -12,7 +12,7 @@ As a Data Engineer Your objective is to build an end-to-end automated data proce
 - SNS
 - Step Funtion
 - S3
-- Data Catalog and Athena (Replaced Athena)
+- Data Catalog and Athena (Replaced Redshift)
 - Streamlit
 
 ## Project Workflow: End-to-End Data Pipeline
